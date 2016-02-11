@@ -401,12 +401,20 @@ controllerModule.controller('EventsController', ['clientsService', 'conf', '$coo
 
     var updateFilters = function() {
       var filtered = $filter('filter')($scope.events, {dc: $scope.filters.dc}, $scope.filterComparator);
+      var q = $scope.filters.q;
+
+      try {
+        q = angular.fromJson(q);
+      } catch(e) {
+        console.log('fail', e.message);
+      }
+
       filtered = $filter('filter')(filtered, {check: {status: $scope.filters.status}});
       filtered = $filter('hideSilenced')(filtered, $scope.filters.silenced);
       filtered = $filter('hideClientsSilenced')(filtered, $scope.filters.clientsSilenced);
       filtered = $filter('hideOccurrences')(filtered, $scope.filters.occurrences);
       filtered = $filter('filter')(filtered, $scope.filters.check);
-      filtered = $filter('filter')(filtered, $scope.filters.q);
+      filtered = $filter('filter')(filtered, q);
       filtered = $filter('collection')(filtered, 'events');
       $scope.filtered = filtered;
     };
