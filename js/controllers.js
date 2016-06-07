@@ -345,14 +345,14 @@ controllerModule.controller('DatacentersController', ['$scope', 'Sensu', 'titleF
 /**
 * Events
 */
-controllerModule.controller('EventsController', ['clientsService', 'conf', '$cookieStore', '$filter', 'filterService', 'helperService', '$rootScope', '$routeParams','routingService', '$scope', 'Sensu', 'stashesService', 'titleFactory', 'userService',
-  function (clientsService, conf, $cookieStore, $filter, filterService, helperService, $rootScope, $routeParams, routingService, $scope, Sensu, stashesService, titleFactory, userService) {
+controllerModule.controller('EventsController', ['clientsService', 'conf', '$cookieStore', '$filter', 'filterService', 'helperService', '$rootScope', '$routeParams','routingService', '$scope', 'Sensu', 'sortPredicateService', 'stashesService', 'titleFactory', 'userService',
+  function (clientsService, conf, $cookieStore, $filter, filterService, helperService, $rootScope, $routeParams, routingService, $scope, Sensu, sortPredicateService, stashesService, titleFactory, userService) {
     $scope.pageHeaderText = 'Events';
     titleFactory.set($scope.pageHeaderText);
 
     $scope.filters = {};
-    $scope.predicate = ['-check.status', '-check.issued'];
-    $scope.reverse = false;
+    $scope.predicate = sortPredicateService.events.predicate;
+    $scope.reverse = sortPredicateService.events.reverse;
     $scope.selected = {all: false, ids: {}};
     $scope.statuses = {1: 'Warning', 2: 'Critical', 3: 'Unknown'};
 
@@ -368,6 +368,10 @@ controllerModule.controller('EventsController', ['clientsService', 'conf', '$coo
     });
     $scope.$on('$destroy', function() {
       Sensu.stop(timer);
+      sortPredicateService.events = {
+        predicate: $scope.predicate,
+        reverse:   $scope.reverse,
+      };
     });
 
     // Filters
