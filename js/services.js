@@ -546,3 +546,13 @@ function ($cookieStore, $location, $rootScope) {
     $location.path('login');
   };
 }]);
+
+/**
+* sort predicates
+*/
+serviceModule.value('sortPredicateService', {
+  events: {
+    predicate: ['-check.status', '-check.issued'],
+    reverse: false,
+  }
+});
