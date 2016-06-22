@@ -11,34 +11,49 @@
         right: tail[i][3]
       }
     }
+    return result;
+  }
 
-     return result;
+  function groupImplied(head, tail) {
+    var result = head,
+        len    = tail.length,
+        i      = 0;
+
+    for (;i<len; i++) {
+      result = {
+        op: 'AND',
+        note: 'implied',
+        left: result,
+        right: tail[i][2]
+      }
+    }
+    return result;
   }
 
 }
 
-// things
-//   = (_ thing:thing _ { return thing })*
+// things = thing* 
 
-foo = _ thing:thing _ { return thing }
+Expression
+  = __ e:ORExpression __ { return e}
 
-thing
-  = ORExpression
-
+ImpliedANDExpression
+  = head:Matcher tail:( _ !((AND/OR) _ ) Matcher)*
+    { return groupImplied(head, tail) }
+    //{ return { head: head, tail :tail }}
+  
 ANDExpression
-  = head:Matcher tail:(_ AND _ Matcher)*
+  = head:ImpliedANDExpression tail:(_ AND _ ImpliedANDExpression)*
     { return groupLeftAssociative(head, tail) }
-  / Matcher
 
 ORExpression
   = head:ANDExpression tail:(_ OR _ ANDExpression)*
     { return groupLeftAssociative(head, tail) }
-  / ANDExpression
 
 OR
-  = _ 'OR'i  _ { return 'OR' }
+  = ( 'OR'i  / '||' ) { return 'OR' }
 AND
-  = _ 'AND'i _ { return 'AND' }
+  = ( 'AND'i / '&&' ) { return 'AND' }
 
 Matcher = PathMatcher / PlainMatcher
 
@@ -47,7 +62,7 @@ PlainMatcher
     { return {op: 'PlainMatch', match: a } }
 
 PathMatcher
-  = _ p:Path _ ':' _ c:StringSequence _
+  = p:Path __ ':' __ c:StringSequence
     { return {op: 'PathMatch', path: p, match: c} }
 
 Path
@@ -55,7 +70,7 @@ Path
   / Token
 
 StringSequence
-  = a:String WS+ b:StringSequence
+  = a:String _ !(PathMatcher / (AND/OR) _ Matcher) b:StringSequence
     { return a + ' ' + b }
   / String
 
@@ -65,23 +80,20 @@ String
   / BareString
 
 BareString
-  = !( AND / OR ) BareStringChar+
-  { return text() }
+  = BareStringChar+ { return text() }
 
 BareStringChar
   = !WS c:. { return c }
 
 DoubleQuotedString
-  = '"' c:DoubleQuoteChar* '"'
-    { return c.join('') }
+  = '"' c:DoubleQuoteChar* '"' { return c.join('') }
 
 DoubleQuoteChar
   = EscapeSequence
   / c:[^"]
 
 SingleQuotedString
-  = "'" c:SingleQuoteChar* "'"
-    { return c.join('') }
+  = "'" c:SingleQuoteChar* "'" { return c.join('') }
 
 SingleQuoteChar
   = EscapeSequence
@@ -91,12 +103,11 @@ EscapeSequence
   = '\\' c:EscapeChar  { return c }
 
 EscapeChar
-  = "n" { return "\n" }
-  / "b" { return "\b";   }
-  / "f" { return "\f";   }
-  / "r" { return "\r";   }
-  / "t" { return "\t";   }
-  / "v" { return "\x0B"; }   // IE does not recognize "\v".
+  = "n" { return "\n"  }
+  / "b" { return "\b"; }
+  / "f" { return "\f"; }
+  / "r" { return "\r"; }
+  / "t" { return "\t"; }
   / "0" ![0-9] { return "\0"; }
   // TODO:  unicode and hex escapes
   / .
@@ -105,7 +116,11 @@ Token
   = token:[a-zA-Z_]+ { return token.join('') }
 
 _
+  = WS+
+
+__
   = WS*
 
 WS =
   [ \r\n\t]
+
