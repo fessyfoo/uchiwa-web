@@ -32,23 +32,22 @@
 
 }
 
-// things = thing* 
+things = Expression*
 
 Expression
-  = __ e:ORExpression __ { return e}
+  = __ e:ANDExpression __ { return e}
 
-ImpliedANDExpression
-  = head:Matcher tail:( _ !((AND/OR) _ ) Matcher)*
-    { return groupImplied(head, tail) }
-    //{ return { head: head, tail :tail }}
-  
 ANDExpression
-  = head:ImpliedANDExpression tail:(_ AND _ ImpliedANDExpression)*
-    { return groupLeftAssociative(head, tail) }
+  = head:ORExpression _ op:AND _ tail:ANDExpression
+    { return { op:op, left: head, right: tail } }
+  / head:ORExpression _ !(OR _ ) tail:ANDExpression
+    { return { op:'iAND', left: head, right: tail } }
+  / ORExpression
 
 ORExpression
-  = head:ANDExpression tail:(_ OR _ ANDExpression)*
-    { return groupLeftAssociative(head, tail) }
+  = head:Matcher _ op:OR _ tail:ORExpression
+    { return { op:op, left: head, right: tail } }
+    / Matcher
 
 OR
   = ( 'OR'i  / '||' ) { return 'OR' }
